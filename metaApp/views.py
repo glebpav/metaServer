@@ -11,7 +11,8 @@ from rest_framework.views import APIView
 
 from metaApp.utils.forms import FileFieldForm
 from .utils.IdentifyRequest import IdentifyRequest, server_tokens
-from .utils.UploadedFilehHandler import UploadedFiLeHandler, get_file_manager
+from .utils.RaisingErrors import RaisingErrors
+from .utils.UploadedFilehHandler import UploadedFiLeHandler, get_file_manager, get_request_to_download_file
 
 
 def hello(request):
@@ -50,51 +51,48 @@ class UploadFileFromForm(FormView):
 class ChangeFile(APIView):
 
     def get(self, request):
-
         body_unicode = request.body.decode('utf-8')
         body_data = json.loads(body_unicode)
         token = body_data['token']
         file_name = body_data['file_name']
 
-        for server_token in server_tokens:
-            if server_token.token == token:
-                file_path = server_token.request_folder_dir + '/' + file_name
-                if os.path.isfile(file_path):
-                    file_manager = get_file_manager(file_path)
+        try:
+            for server_token in server_tokens:
+                if server_token.token == token:
+                    file_path = server_token.request_folder_dir + '/' + file_name
+                    if os.path.isfile(file_path):
 
-                    with open(file_path, 'rb') as f:
-                        file_data = f.read()
+                        file_manager = get_file_manager(file_path)
+                        response = get_request_to_download_file(file_path=file_path, file_manager=file_manager)
+                        server_token.expire_token()
 
-                    response = HttpResponse(file_data, content_type=file_manager.get_content_type())
-                    response['Content-Disposition'] = 'attachment; filename="' + file_path + '"'
-
-                    return response
-                else:
-                    return JsonResponse({'message': 'No such file'}, status=400)
-                break
-        else:
-            return JsonResponse({'message': 'No such token'}, status=400)
+                        return response
+                    else:
+                        raise RaisingErrors.no_such_file
+                    break
+            else:
+                raise RaisingErrors.no_such_token
+        except ValueError as error:
+            return JsonResponse({'message': str(error.args[0])}, status=error.args[1])
 
     def put(self, request):
         body_unicode = request.body.decode('utf-8')
         body_data = json.loads(body_unicode)
+
         token = body_data['token']
         file_name = body_data['file_name']
         list_changing_params = body_data['changing_params']
-        print('list of changing params: ', list_changing_params)
-        print('len of tokens: ', len(server_tokens))
+
         for server_token in server_tokens:
-            print('tokens: ', server_token.token)
             if server_token.token == token:
-                print(server_token.request_folder_dir)
-                print(server_token.request_folder_dir + '/' + file_name)
+
                 file_path = server_token.request_folder_dir + '/' + file_name
+
                 if os.path.isfile(file_path):
                     file_manager = get_file_manager(file_path)
                     for item in list_changing_params:
                         param = item['param']
                         new_value = item['value']
-                        print('param: new value <===> ', param, new_value)
                         file_manager.set_property(key=param, value=new_value)
                         return JsonResponse({'message': 'OK'}, status=200)
                 else:

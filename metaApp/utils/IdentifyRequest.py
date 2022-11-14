@@ -1,4 +1,5 @@
 import os
+import shutil
 from uuid import uuid4
 
 
@@ -8,7 +9,7 @@ def make_new_dir(new_path):
 
 
 def delete_dir(path_to_dir):
-    os.rmdir(path_to_dir)
+    shutil.rmtree(path_to_dir)
 
 
 server_tokens = []
@@ -30,3 +31,4 @@ class IdentifyRequest:
 
     def expire_token(self):
         delete_dir(self.request_folder_dir)
+        server_tokens.remove(self)

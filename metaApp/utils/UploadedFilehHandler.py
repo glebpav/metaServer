@@ -1,6 +1,9 @@
 import os
 
+from django.http import HttpResponse
+
 from metaApp.metaHelper.ExifManager import ExifManager
+from metaApp.utils.RaisingErrors import RaisingErrors
 
 
 class UploadedFiLeHandler:
@@ -26,3 +29,21 @@ def get_file_manager(path_to_file):
         pass
     elif file_extension in []:
         pass
+    return RaisingErrors.no_such_file_extension
+
+
+def get_request_to_download_file(file_path, file_manager):
+    with open(file_path, 'rb') as f:
+        file_data = f.read()
+
+    content_type = file_manager.get_content_type()
+
+    if content_type is None:
+        raise RaisingErrors.no_such_content_type
+
+    response = HttpResponse(file_data, content_type=content_type)
+    response['Content-Disposition'] = 'attachment; filename="' + file_path + '"'
+
+    f.close()
+
+    return response
