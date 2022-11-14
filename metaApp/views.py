@@ -27,25 +27,28 @@ class UploadFileFromForm(FormView):
         return super(UploadFileFromForm, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        form_class = self.get_form_class()
-        # form = self.get_form(form_class)
-        files = request.FILES.getlist('file_field')
-        print("My files: ", files)
-        identify_request_token = IdentifyRequest()
-        list_managers = []
-        if len(files) != 0:
-            for file in files:
-                UploadedFiLeHandler.upload_file(file=file, token=identify_request_token)
-                print(identify_request_token.request_folder_dir + '/' + str(file))
-                list_managers.append(get_file_manager(identify_request_token.request_folder_dir + '/' + str(file)))
+        try:
+            form_class = self.get_form_class()
+            # form = self.get_form(form_class)
+            files = request.FILES.getlist('file_field')
+            print("My files: ", files)
+            identify_request_token = IdentifyRequest()
+            list_managers = []
+            if len(files) != 0:
+                for file in files:
+                    list_managers.append(get_file_manager(identify_request_token.request_folder_dir + '/' + str(file)))
+                    UploadedFiLeHandler.upload_file(file=file, token=identify_request_token)
+                    print(identify_request_token.request_folder_dir + '/' + str(file))
 
-        list_metadata = []
-        for item in list_managers:
-            list_metadata.append(item.get_all_metadata())
+            list_metadata = []
+            for item in list_managers:
+                list_metadata.append(item.get_all_metadata())
 
-        print(list_metadata)
-        response_dict = {'token': identify_request_token.token, 'file_data': list_metadata}
-        return HttpResponse(json.dumps(response_dict), content_type="application/json")
+            print(list_metadata)
+            response_dict = {'token': identify_request_token.token, 'file_data': list_metadata}
+            return HttpResponse(json.dumps(response_dict), content_type="application/json")
+        except ValueError as error:
+            return JsonResponse({'message': str(error.args[0])}, status=error.args[1])
 
 
 class ChangeFile(APIView):

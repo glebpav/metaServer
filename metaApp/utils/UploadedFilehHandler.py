@@ -23,13 +23,7 @@ def get_file_manager(path_to_file):
     if file_extension in ['png', 'jpg', 'jpeg', 'svg']:
         print('file is exif format')
         return ExifManager(path_to_file)
-    elif file_extension in []:
-        pass
-    elif file_extension in []:
-        pass
-    elif file_extension in []:
-        pass
-    return RaisingErrors.no_such_file_extension
+    raise RaisingErrors.no_such_file_extension
 
 
 def get_request_to_download_file(file_path, file_manager):
