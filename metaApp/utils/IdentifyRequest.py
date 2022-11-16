@@ -21,7 +21,6 @@ class IdentifyRequest:
     def __init__(self):
         self.token = self.__get_token()
         self.request_folder_dir = 'loadedFiles/' + str(self.token)
-        make_new_dir(self.request_folder_dir)
         server_tokens.append(self)
 
     @staticmethod

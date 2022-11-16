@@ -28,7 +28,7 @@ class ExifManager(FileManager):
         elif file_extension == 'webp':
             content_type += 'webp'
         else:
-            raise ValueError('No such content type 1', 400)
+            raise ValueError('No such content type', 400)
         return content_type
 
     def clear_all_data(self):
