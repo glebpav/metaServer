@@ -1,14 +1,13 @@
 import os
 
-from django.http import HttpResponse
-
 from metaApp.metaHelper.ExifManager import ExifManager
+from metaApp.metaHelper.PdfManager import PdfManager
+from metaApp.metaHelper.XlsxManager import XlsxManager
 from metaApp.utils.IdentifyRequest import make_new_dir
 from metaApp.utils.RaisingErrors import RaisingErrors
 
 
 class UploadedFiLeHandler:
-
     @staticmethod
     def upload_file(file, token):
         file_name = token.request_folder_dir + '/' + str(file)
@@ -27,6 +26,12 @@ def get_file_manager(path_to_file):
     if file_extension in ['png', 'jpg', 'jpeg', 'svg']:
         print('file is exif format')
         file_manager = ExifManager(path_to_file)
+    elif file_extension in ['pdf']:
+        print('file is pdf format')
+        file_manager = PdfManager(path_to_file)
+    elif file_extension in ['xlsx']:
+        print('file is xlsx format')
+        file_manager = XlsxManager(path_to_file)
 
     if file_manager is None:
         raise RaisingErrors.no_such_file_extension(file_extension=file_extension)

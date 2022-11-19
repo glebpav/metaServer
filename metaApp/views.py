@@ -17,7 +17,7 @@ from .utils.UploadedFilehHandler import UploadedFiLeHandler, get_file_manager
 
 
 def hello(request):
-    return HttpResponse(json.dumps('{potdata:4321}'), content_type="application/json")
+    return HttpResponse(json.dumps('{post_data:4321}'), content_type="application/json")
 
 
 class UploadFileFromForm(FormView):
