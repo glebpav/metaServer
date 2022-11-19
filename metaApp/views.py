@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from metaApp.utils.forms import FileFieldForm
 from .utils.DownloadManager import get_request_to_download_tar, get_request_to_download_file
-from .utils.IdentifyRequest import IdentifyRequest, server_tokens
+from .utils.IdentifyRequest import IdentifyRequest, server_tokens, delete_dir
 from .utils.RaisingErrors import RaisingErrors
 from .utils.UploadedFilehHandler import UploadedFiLeHandler, get_file_manager
 
@@ -123,6 +123,23 @@ class DownloadAllFiles(APIView):
                     server_token.expire_token()
 
                     return response
+            else:
+                raise RaisingErrors.no_such_token
+        except ValueError as error:
+            return JsonResponse({'message': str(error.args[0])}, status=error.args[1])
+
+
+class EndSession(APIView):
+
+    def get(self, request):
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        token = body_data['token']
+        try:
+            for server_token in server_tokens:
+                if server_token.token == token:
+                    server_token.expire_token()
+                    return JsonResponse({'message': 'Success'}, status=200)
             else:
                 raise RaisingErrors.no_such_token
         except ValueError as error:
