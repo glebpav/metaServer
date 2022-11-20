@@ -7,3 +7,7 @@ class RaisingErrors:
     @staticmethod
     def no_such_file_extension(file_extension):
         return ValueError(str(file_extension) + ' file extension is not supporting now', 422)
+
+    @staticmethod
+    def no_such_param(param):
+        return ValueError('\'' + param + '\' is required in request', 400)

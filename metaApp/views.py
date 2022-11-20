@@ -13,11 +13,8 @@ from metaApp.utils.forms import FileFieldForm
 from .utils.DownloadManager import get_request_to_download_tar, get_request_to_download_file
 from .utils.IdentifyRequest import IdentifyRequest, server_tokens, delete_dir
 from .utils.RaisingErrors import RaisingErrors
+from .utils.Serializer import get_token_from_request, serialize_download_request, serialize_update_file_request
 from .utils.UploadedFilehHandler import UploadedFiLeHandler, get_file_manager
-
-
-def hello(request):
-    return HttpResponse(json.dumps('{post_data:4321}'), content_type="application/json")
 
 
 class UploadFileFromForm(FormView):
@@ -50,55 +47,45 @@ class UploadFileFromForm(FormView):
 class ChangeFile(APIView):
 
     def put(self, request):
-        body_unicode = request.body.decode('utf-8')
-        body_data = json.loads(body_unicode)
 
-        token = body_data['token']
-        file_name = body_data['file_name']
-        list_changing_params = body_data['changing_params']
+        try:
+            token, file_name, list_changing_params = serialize_update_file_request(request)
+            for server_token in server_tokens:
+                if server_token.token == token:
+                    file_path = server_token.request_folder_dir + '/' + file_name
 
-        for server_token in server_tokens:
-            if server_token.token == token:
+                    if not os.path.isfile(file_path):
+                        raise RaisingErrors.no_such_file
 
-                file_path = server_token.request_folder_dir + '/' + file_name
-
-                if os.path.isfile(file_path):
                     file_manager = get_file_manager(file_path)
                     for item in list_changing_params:
                         param = item['param']
                         new_value = item['value']
                         file_manager.set_property(key=param, value=new_value)
-                        return JsonResponse({'message': 'OK'}, status=200)
-                else:
-                    return JsonResponse({'message': 'No such file'}, status=400)
-                break
-        else:
-            return JsonResponse({'message': 'No such token'}, status=400)
-        return HttpResponse(json.dumps('{post_data:4321}'), content_type="application/json")
+                    return JsonResponse({'message': 'OK'}, status=200)
+            else:
+                raise RaisingErrors.no_such_token
+        except ValueError as error:
+            return JsonResponse({'message': str(error.args[0])}, status=error.args[1])
 
 
 class DownloadFile(APIView):
 
     def get(self, request):
-        body_unicode = request.body.decode('utf-8')
-        body_data = json.loads(body_unicode)
-        token = body_data['token']
-        file_name = body_data['file_name']
-        print()
         try:
+            token, file_name = serialize_download_request(request)
             for server_token in server_tokens:
                 if server_token.token == token:
                     file_path = server_token.request_folder_dir + '/' + file_name
-                    if os.path.isfile(file_path):
 
-                        file_manager = get_file_manager(file_path)
-                        response = get_request_to_download_file(file_path=file_path, file_manager=file_manager)
-                        server_token.expire_token()
-
-                        return response
-                    else:
+                    if not os.path.isfile(file_path):
                         raise RaisingErrors.no_such_file
-                    break
+
+                    file_manager = get_file_manager(file_path)
+                    response = get_request_to_download_file(file_path=file_path, file_manager=file_manager)
+                    server_token.expire_token()
+
+                    return response
             else:
                 raise RaisingErrors.no_such_token
         except ValueError as error:
@@ -108,10 +95,8 @@ class DownloadFile(APIView):
 class DownloadAllFiles(APIView):
 
     def get(self, request):
-        body_unicode = request.body.decode('utf-8')
-        body_data = json.loads(body_unicode)
-        token = body_data['token']
         try:
+            token = get_token_from_request(request)
             for server_token in server_tokens:
                 if server_token.token == token:
                     file_paths = glob.glob(server_token.request_folder_dir + '/*')
@@ -132,10 +117,8 @@ class DownloadAllFiles(APIView):
 class EndSession(APIView):
 
     def get(self, request):
-        body_unicode = request.body.decode('utf-8')
-        body_data = json.loads(body_unicode)
-        token = body_data['token']
         try:
+            token = get_token_from_request(request)
             for server_token in server_tokens:
                 if server_token.token == token:
                     server_token.expire_token()
