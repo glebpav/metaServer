@@ -11,3 +11,7 @@ class RaisingErrors:
     @staticmethod
     def no_such_param(param):
         return ValueError('\'' + param + '\' is required in request', 400)
+
+    @staticmethod
+    def no_such_attribute(attribute):
+        return ValueError('attribute \'' + attribute + '\' is unknown', 400)
